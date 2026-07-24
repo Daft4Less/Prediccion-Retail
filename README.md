@@ -67,15 +67,26 @@ En `app.py`, nos comunicamos con este archivo usando **ONNX Runtime** a través 
    ```bash
    pip install -r requirements.txt
    ```
-4. **Correr la aplicación** con Streamlit:
+4. **Verificar el modelo de IA** (Paso opcional para demostración en vivo antes de abrir el dashboard):
+   * **Opción A (Ejecutar script interactivo)**:
+     ```bash
+     py verificar_modelo.py
+     ```
+   * **Opción B (Comando directo de una sola línea)**:
+     ```bash
+     py -c "import pandas as pd, json; m=json.load(open('modelo/metadata.json')); h=pd.read_parquet('modelo/historico_features.parquet'); print('Modelo cargado correctamente'); print('Tipo de modelo: ModeloONNX'); print('Error de validacion (MAE):', round(m['mae'], 2), 'unidades'); print('Registros del historico usado:', len(h)); print('Variables que usa el modelo:', len(m['columnas_features']))"
+     ```
+     *(Debería imprimir en consola el estado correcto de validación de 5.33 MAE y las 15 variables de entrada).*
+
+5. **Correr la aplicación** con Streamlit:
    ```bash
-   python -m streamlit run app.py
+   py -m streamlit run app.py
    ```
-5. Acceder automáticamente en tu navegador a **[http://localhost:8501](http://localhost:8501)**.
+6. Acceder automáticamente en tu navegador a **[http://localhost:8501](http://localhost:8501)**.
 
 ---
 
-##  Desarrolladores
+## 👥 Desarrolladores
 * **Daniela Auquilla** (Project Manager & Negocio)
 * **José Salamea** (Ingeniería de Datos)
 * **Pedro Gonzalez** (Científico de Datos)

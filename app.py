@@ -12,10 +12,22 @@ from sklearn.metrics import mean_absolute_error
 import plotly.graph_objects as go
 import warnings
 import textwrap
+import logging
 
 warnings.filterwarnings("ignore")
 
 import onnxruntime as rt
+
+# Configurar el sistema de logging para imprimir en la consola CMD con marcas de tiempo
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+
+logging.info("Iniciando aplicación de predicción de retail...")
 
 
 class ModeloONNX:
@@ -272,6 +284,34 @@ st.markdown(
             color: #64748B !important;
         }
         </style>
+
+        <script>
+            function makeInputsReadOnly() {
+                // Seleccionar todos los elementos input de la página principal (dentro del parent de Streamlit)
+                var inputs = window.parent.document.querySelectorAll('input');
+                inputs.forEach(function(input) {
+                    // Si el input no es de tipo número (stock de seguridad) ni file uploader
+                    if (input.type !== 'number' && input.type !== 'file') {
+                        // Marcar como solo lectura
+                        input.readOnly = true;
+                        
+                        // Bloquear clicks de teclado para prevenir escritura manual
+                        input.onkeypress = function(e) {
+                            e.preventDefault();
+                        };
+                        input.onkeydown = function(e) {
+                            // Permitir teclas especiales de navegación como Tab, Backspace, Delete, flechas
+                            var allowedKeys = ["Tab", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Backspace", "Delete"];
+                            if (allowedKeys.indexOf(e.key) === -1 && e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+                                e.preventDefault();
+                            }
+                        };
+                    }
+                });
+            }
+            // Ejecutar periódicamente cada 400ms para mantener el estado ante cambios reactivos del DOM de React
+            setInterval(makeInputsReadOnly, 400);
+        </script>
         """
     ),
     unsafe_allow_html=True,
@@ -358,12 +398,18 @@ def cargar_modelo_preentrenado():
     """
     import json
 
+    logging.info(f"Iniciando carga de metadatos desde {RUTA_METADATA}...")
     with open(RUTA_METADATA) as f:
         metadata = json.load(f)
 
+    logging.info(f"Cargando modelo de red predictora ONNX desde {RUTA_MODELO_ONNX}...")
     modelo = ModeloONNX(RUTA_MODELO_ONNX)
+    
+    logging.info(f"Cargando dataset histórico desde {RUTA_HISTORICO}...")
     df_feat = pd.read_parquet(RUTA_HISTORICO)
+    
     mapa_rotacion = {int(k): v for k, v in metadata["mapa_rotacion"].items()}
+    logging.info(f"Modelo cargado correctamente. Total de productos activos en catálogo: {len(metadata['productos_a_usar'])}. Error promedio (MAE): {metadata['mae']:.2f}")
 
     return {
         "modelo": modelo, "df_feat": df_feat, "columnas_features": metadata["columnas_features"],
@@ -480,6 +526,7 @@ def preparar_features(item_id, fecha_objetivo, df_historico, modelo_info):
 
 
 def predecir_recursivo(item_id, fecha_inicio, fecha_fin, df_historico, modelo_info):
+    logging.info(f"[PROCESO] Iniciando prediccion recursiva para Producto {item_id} desde {fecha_inicio.date()} hasta {fecha_fin.date()}...")
     fecha_inicio_dt = pd.to_datetime(fecha_inicio)
     historico_ext = df_historico[
         (df_historico["item"] == item_id) & (df_historico["date"] < fecha_inicio_dt)
@@ -494,6 +541,7 @@ def predecir_recursivo(item_id, fecha_inicio, fecha_fin, df_historico, modelo_in
         nueva = pd.DataFrame([{"date": fecha, "item": item_id, "sales": pred}])
         historico_ext = pd.concat([historico_ext, nueva], ignore_index=True)
 
+    logging.info(f"[PROCESO] Prediccion completada para Producto {item_id}. Dias proyectados: {len(preds)}")
     return pd.DataFrame(preds)
 
 
@@ -525,6 +573,8 @@ def cuanto_pedir(item_id, fecha_objetivo, modelo_info, stock_actual=0, stock_seg
     demanda_total = consumo_real + demanda_predicha
     cantidad_a_pedir = max(0, round(demanda_total + stock_seguridad - stock_actual))
 
+    logging.info(f"[LOGÍSTICA] Producto {item_id} | Stock Actual: {stock_actual} | Stock Seguridad: {stock_seguridad} | Demanda Total Proyectada: {round(demanda_total)} | Sugerencia de Compra: {cantidad_a_pedir}")
+
     return {
         "demanda_total": round(demanda_total), "consumo_real": round(consumo_real),
         "demanda_predicha": round(demanda_predicha), "cantidad_a_pedir": cantidad_a_pedir,
@@ -547,6 +597,17 @@ st.markdown(
         """
     ),
     unsafe_allow_html=True,
+)
+
+# Inyectar logs iniciales en la consola Chrome/DevTools del navegador del usuario
+st.components.v1.html(
+    """
+    <script>
+        console.log('%c[SISTEMA] Panel de Inteligencia Predictiva Inicializado.', 'color: #16A34A; font-weight: bold; font-size: 1.1em;');
+        console.log('%c[SISTEMA] Modelo ONNX cargado exitosamente. Listo para operaciones.', 'color: #475569; font-weight: 500;');
+    </script>
+    """,
+    height=0
 )
 
 # --- Configuración de datos por defecto (sin panel de configuración) ---
@@ -670,6 +731,16 @@ with tab1:
                 producto_sel, pd.Timestamp(fecha_hasta), modelo_info,
                 stock_actual=stock_prod, stock_seguridad=stock_seguridad_esp,
                 fecha_corte_stock=fecha_corte_stock,
+            )
+
+            # Inyectar log en la consola de Chrome/DevTools del navegador
+            st.components.v1.html(
+                f"""
+                <script>
+                    console.log('%c[LOGÍSTICA] Producto {producto_sel} | Stock Actual: {stock_prod} | Stock Seguridad: {stock_seguridad_esp} | Demanda Proyectada: {resultado["demanda_total"]} | Sugerencia Compra: {resultado["cantidad_a_pedir"]}', 'color: #2563EB; font-weight: bold;');
+                </script>
+                """,
+                height=0
             )
 
             p_name = nombres_activos.get(producto_sel, f"Producto {producto_sel}")
@@ -1000,6 +1071,14 @@ with tab2:
         st.markdown("</div>", unsafe_allow_html=True)
 
     if btn_gen_clicked:
+        st.components.v1.html(
+            f"""
+            <script>
+                console.log('%c[SISTEMA] Iniciando analisis global de demanda para {len(productos_analisis)} productos...', 'color: #8B5CF6; font-weight: bold;');
+            </script>
+            """,
+            height=0
+        )
         filas = []
         barra = st.progress(0.0, text="Calculando predicciones por producto...")
         
@@ -1027,6 +1106,16 @@ with tab2:
         barra.empty()
 
         tabla = pd.DataFrame(filas).sort_values("Sugerencia de Pedido", ascending=False).reset_index(drop=True)
+        compra_total = tabla["Sugerencia de Pedido"].sum()
+        
+        st.components.v1.html(
+            f"""
+            <script>
+                console.log('%c[SISTEMA] Analisis global completado. Compra sugerida consolidada: {compra_total} unidades.', 'color: #16A34A; font-weight: bold;');
+            </script>
+            """,
+            height=0
+        )
 
         fecha_desde_g_str = fecha_desde_g.strftime('%d de %B de %Y')
         fecha_hasta_g_str = fecha_hasta_g.strftime('%d de %B de %Y')

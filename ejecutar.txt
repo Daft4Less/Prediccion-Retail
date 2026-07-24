@@ -1,0 +1,15 @@
+PASOS PARA EJECUTAR EN OTRA PC:
+
+1. Instalar Python (marcando "Add Python to PATH" en la instalación).
+2. Abrir la consola de comandos (CMD) en la carpeta del proyecto.
+3. Instalar librerías necesarias ejecutando:
+   pip install -r requirements.txt
+
+4. Verificar el modelo de IA (opcional para la presentación en vivo):
+   py verificar_modelo.py
+   (Debería imprimir en consola que el modelo cargó bien con MAE: 5.33)
+
+5. Iniciar la aplicación ejecutando:
+   py -m streamlit run app.py
+
+6. Abrir en el navegador: http://localhost:8501
