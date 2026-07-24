@@ -1,0 +1,54 @@
+{
+  "mapa_rotacion": {
+    "15": "alta",
+    "28": "alta",
+    "22": "alta",
+    "8": "alta",
+    "12": "media",
+    "24": "media",
+    "9": "baja",
+    "20": "baja",
+    "3": "baja",
+    "5": "baja"
+  },
+  "columnas_features": [
+    "dia_semana_num",
+    "dia_mes",
+    "mes",
+    "trimestre",
+    "anio",
+    "es_fin_de_semana",
+    "rotacion_alta",
+    "rotacion_baja",
+    "rotacion_media",
+    "lag_7",
+    "lag_14",
+    "lag_30",
+    "media_movil_7",
+    "media_movil_30",
+    "std_movil_7"
+  ],
+  "lags": [
+    7,
+    14,
+    30
+  ],
+  "ventanas_rolling": [
+    7,
+    30
+  ],
+  "mae": 5.334060192108154,
+  "promedio_venta": 56.80829621380846,
+  "productos_a_usar": [
+    15,
+    28,
+    22,
+    8,
+    12,
+    24,
+    9,
+    20,
+    3,
+    5
+  ]
+}

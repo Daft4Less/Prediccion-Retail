@@ -1,0 +1,14 @@
+# Ignorar carpeta de metadatos de Gemini y Antigravity
+.gemini/
+
+# Ignorar archivos compilados de Python y cachés
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorar checkpoints de Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Ignorar backups locales (opcional pero recomendado)
+app_backup.py
