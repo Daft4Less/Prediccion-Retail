@@ -87,7 +87,7 @@ En `app.py`, nos comunicamos con este archivo usando **ONNX Runtime** a través 
 ---
 
 ## 👥 Desarrolladores
-* **Daniela Auquilla** (Project Manager & Negocio)
+* **Daniela Auquilla** (Project Manager)
 * **José Salamea** 
 * **Pedro Gonzalez** 
 * **Carlos Moyano** 
